@@ -18,6 +18,7 @@ import {
   Zap,
   CheckCircle2,
 } from "lucide-react";
+import EventManagement from "./EventManagement";
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -365,31 +366,7 @@ export default function AdminDashboard() {
             </div>
           )}
 
-          {activeTab === "events" && (
-            <div className="space-y-8">
-              <div>
-                <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
-                  Event Management
-                </h1>
-                <p className="text-slate-600 dark:text-slate-400">
-                  Create, edit, and manage all your college fest events
-                </p>
-              </div>
-              <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-12 text-center">
-                <Calendar className="w-16 h-16 text-primary-500 mx-auto mb-4 opacity-20" />
-                <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
-                  Event Management Interface
-                </h2>
-                <p className="text-slate-600 dark:text-slate-400 mb-6">
-                  Create new events, set limits, add rules, venues, timings, and deadlines
-                </p>
-                <button className="px-6 py-2 bg-gradient-to-r from-primary-500 to-primary-600 text-white rounded-lg font-medium hover:shadow-lg transition-all">
-                  <Plus className="w-5 h-5 inline mr-2" />
-                  Create Event
-                </button>
-              </div>
-            </div>
-          )}
+          {activeTab === "events" && <EventManagement />}
 
           {activeTab === "registrations" && (
             <div className="space-y-8">
