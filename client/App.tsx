@@ -13,7 +13,7 @@ import ParticipantLogin from "./pages/ParticipantLogin";
 
 const queryClient = new QueryClient();
 
-const App = () => (
+export const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
@@ -31,4 +31,7 @@ const App = () => (
   </QueryClientProvider>
 );
 
-createRoot(document.getElementById("root")!).render(<App />);
+if (typeof document !== "undefined") {
+  const root = createRoot(document.getElementById("root")!);
+  root.render(<App />);
+}
