@@ -284,7 +284,7 @@ export default function ParticipantDashboard() {
 
                 <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6">
                   <div className="flex items-center justify-between mb-4">
-                    <Award className="w-8 h-8 text-accent-500" />
+                    <Award className="w-8 h-8 text-primary-500" />
                     <CheckCircle2 className="w-5 h-5 text-green-500" />
                   </div>
                   <p className="text-slate-600 dark:text-slate-400 text-sm font-medium mb-1">

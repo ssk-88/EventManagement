@@ -41,6 +41,8 @@ export default function AdminDashboard() {
       change: "+2 this week",
       icon: Calendar,
       color: "primary",
+      bgClass: "bg-primary-100 dark:bg-primary-900/20",
+      textClass: "text-primary-600 dark:text-primary-400",
     },
     {
       label: "Total Registrations",
@@ -48,6 +50,8 @@ export default function AdminDashboard() {
       change: "+156 today",
       icon: Users,
       color: "secondary",
+      bgClass: "bg-secondary-100 dark:bg-secondary-900/20",
+      textClass: "text-secondary-600 dark:text-secondary-400",
     },
     {
       label: "Participation Rate",
@@ -55,6 +59,8 @@ export default function AdminDashboard() {
       change: "+5% from last fest",
       icon: TrendingUp,
       color: "accent",
+      bgClass: "bg-accent-100 dark:bg-accent-900/20",
+      textClass: "text-accent-600 dark:text-accent-400",
     },
     {
       label: "Pending Approvals",
@@ -62,6 +68,8 @@ export default function AdminDashboard() {
       change: "12 teams waiting",
       icon: Users2,
       color: "primary",
+      bgClass: "bg-primary-100 dark:bg-primary-900/20",
+      textClass: "text-primary-600 dark:text-primary-400",
     },
   ];
 
@@ -226,8 +234,6 @@ export default function AdminDashboard() {
               <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {stats.map((stat, i) => {
                   const Icon = stat.icon;
-                  const colorClass = `text-${stat.color}-600 dark:text-${stat.color}-400`;
-                  const bgClass = `bg-${stat.color}-100 dark:bg-${stat.color}-900/20`;
                   return (
                     <div
                       key={i}
@@ -235,9 +241,9 @@ export default function AdminDashboard() {
                     >
                       <div className="flex items-start justify-between mb-4">
                         <div
-                          className={`w-12 h-12 rounded-lg ${bgClass} flex items-center justify-center`}
+                          className={`w-12 h-12 rounded-lg ${stat.bgClass} flex items-center justify-center`}
                         >
-                          <Icon className={`w-6 h-6 ${colorClass}`} />
+                          <Icon className={`w-6 h-6 ${stat.textClass}`} />
                         </div>
                         <CheckCircle2 className="w-5 h-5 text-green-500" />
                       </div>
