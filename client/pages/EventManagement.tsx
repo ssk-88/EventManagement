@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Plus,
   Search,
@@ -9,88 +10,14 @@ import {
   Users,
   Clock,
   X,
-  Upload,
   AlertCircle,
   CheckCircle2,
   Eye,
-  Filter,
 } from "lucide-react";
-
-interface Event {
-  id: number;
-  title: string;
-  description: string;
-  category: "Technical" | "Cultural" | "Sports" | "Workshop";
-  type: "Individual" | "Team";
-  venue: string;
-  date: string;
-  time: string;
-  deadline: string;
-  coordinator: string;
-  coordinatorEmail: string;
-  maxParticipants: number;
-  registeredParticipants: number;
-  maxTeams?: number;
-  teamSize?: number;
-  teamSizeMin?: number;
-  teamSizeMax?: number;
-  rules: string;
-  eligibility: string;
-  status: "Upcoming" | "Ongoing" | "Completed";
-  registrationOpen: boolean;
-  posterUrl?: string;
-}
+import { Event, EventCategory } from "@shared/api";
 
 export default function EventManagement() {
-  const [events, setEvents] = useState<Event[]>([
-    {
-      id: 1,
-      title: "CodeMasters 2024",
-      description: "Competitive programming challenge with exciting prizes",
-      category: "Technical",
-      type: "Team",
-      venue: "Auditorium A",
-      date: "2024-05-20",
-      time: "10:00 AM",
-      deadline: "2024-05-18",
-      coordinator: "Dr. John Smith",
-      coordinatorEmail: "john@college.edu",
-      maxParticipants: 500,
-      registeredParticipants: 324,
-      maxTeams: 100,
-      teamSize: 3,
-      teamSizeMin: 2,
-      teamSizeMax: 4,
-      rules: "Team must follow competition rules. No external help allowed.",
-      eligibility: "All students except final year students",
-      status: "Upcoming",
-      registrationOpen: true,
-    },
-    {
-      id: 2,
-      title: "Design Jam",
-      description: "UI/UX design competition showcasing creativity",
-      category: "Technical",
-      type: "Team",
-      venue: "Lab Block 2",
-      date: "2024-05-22",
-      time: "02:00 PM",
-      deadline: "2024-05-20",
-      coordinator: "Ms. Sarah Johnson",
-      coordinatorEmail: "sarah@college.edu",
-      maxParticipants: 250,
-      registeredParticipants: 187,
-      maxTeams: 60,
-      teamSize: 3,
-      teamSizeMin: 2,
-      teamSizeMax: 4,
-      rules: "Original designs only. Must use provided tools.",
-      eligibility: "All students",
-      status: "Upcoming",
-      registrationOpen: true,
-    },
-  ]);
-
+  const queryClient = useQueryClient();
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -119,9 +46,59 @@ export default function EventManagement() {
     registrationOpen: true,
   });
 
-  const categories = ["Technical", "Cultural", "Sports", "Workshop"];
+  // Queries
+  const { data: events = [], isLoading } = useQuery<Event[]>({
+    queryKey: ["/api/events"],
+    queryFn: async () => {
+      const res = await fetch("/api/events");
+      if (!res.ok) throw new Error("Failed to fetch events");
+      return res.json();
+    },
+  });
+
+  // Mutations
+  const createMutation = useMutation({
+    mutationFn: async (newEvent: Partial<Event>) => {
+      const res = await fetch("/api/events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newEvent),
+      });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/events"] });
+      setShowModal(false);
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, updates }: { id: number; updates: Partial<Event> }) => {
+      const res = await fetch(`/api/events/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updates),
+      });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/events"] });
+      setShowModal(false);
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      await fetch(`/api/events/${id}`, { method: "DELETE" });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/events"] });
+    },
+  });
+
+  const categories: EventCategory[] = ["Technical", "Cultural", "Sports", "Workshop"];
   const categoryColors: {
-    [key: string]: { bg: string; text: string; border: string };
+    [key in EventCategory]: { bg: string; text: string; border: string };
   } = {
     Technical: {
       bg: "bg-primary-100 dark:bg-primary-900/20",
@@ -190,39 +167,23 @@ export default function EventManagement() {
     }
 
     if (editingId) {
-      setEvents(
-        events.map((e) =>
-          e.id === editingId ? { ...e, ...(formData as Partial<Event>) } : e
-        )
-      );
+      updateMutation.mutate({ id: editingId, updates: formData });
     } else {
-      setEvents([
-        ...events,
-        {
-          id: Math.max(...events.map((e) => e.id), 0) + 1,
-          registeredParticipants: 0,
-          posterUrl: "",
-          ...(formData as Event),
-        },
-      ]);
+      createMutation.mutate(formData);
     }
-
-    setShowModal(false);
-    setFormData({});
   };
 
   const handleDeleteEvent = (id: number) => {
     if (confirm("Are you sure you want to delete this event?")) {
-      setEvents(events.filter((e) => e.id !== id));
+      deleteMutation.mutate(id);
     }
   };
 
-  const handleToggleRegistration = (id: number) => {
-    setEvents(
-      events.map((e) =>
-        e.id === id ? { ...e, registrationOpen: !e.registrationOpen } : e
-      )
-    );
+  const handleToggleRegistration = (event: Event) => {
+    updateMutation.mutate({
+      id: event.id,
+      updates: { registrationOpen: !event.registrationOpen }
+    });
   };
 
   const filteredEvents = events.filter((event) => {
@@ -246,6 +207,14 @@ export default function EventManagement() {
     if (days === 1) return { text: "Tomorrow", color: "text-orange-600" };
     return { text: `${days} days left`, color: "text-green-600" };
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -436,7 +405,7 @@ export default function EventManagement() {
                         Edit
                       </button>
                       <button
-                        onClick={() => handleToggleRegistration(event.id)}
+                        onClick={() => handleToggleRegistration(event)}
                         className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition font-medium"
                       >
                         {event.registrationOpen ? (
@@ -814,7 +783,7 @@ export default function EventManagement() {
                     onChange={(e) =>
                       setFormData({
                         ...formData,
-                        status: e.target.value as "Upcoming" | "Ongoing" | "Completed",
+                        status: e.target.value as any,
                       })
                     }
                     className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg dark:text-white focus:ring-2 focus:ring-primary-500"
