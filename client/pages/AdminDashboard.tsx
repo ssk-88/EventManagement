@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import {
   Calendar,
   Users,
@@ -15,10 +16,10 @@ import {
   Sparkles,
   TrendingUp,
   Users2,
-  Zap,
   CheckCircle2,
 } from "lucide-react";
 import EventManagement from "./EventManagement";
+import { Event, DashboardStats } from "@shared/api";
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -34,11 +35,27 @@ export default function AdminDashboard() {
 
   const adminEmail = localStorage.getItem("admin_email") || "admin@college.edu";
 
-  // Mock data
-  const stats = [
+  // Queries
+  const { data: stats } = useQuery<DashboardStats>({
+    queryKey: ["/api/stats"],
+    queryFn: async () => {
+      const res = await fetch("/api/stats");
+      return res.json();
+    },
+  });
+
+  const { data: events = [] } = useQuery<Event[]>({
+    queryKey: ["/api/events"],
+    queryFn: async () => {
+      const res = await fetch("/api/events");
+      return res.json();
+    },
+  });
+
+  const statCards = [
     {
       label: "Active Events",
-      value: "12",
+      value: stats?.activeEvents ?? "...",
       change: "+2 this week",
       icon: Calendar,
       color: "primary",
@@ -47,7 +64,7 @@ export default function AdminDashboard() {
     },
     {
       label: "Total Registrations",
-      value: "3,247",
+      value: stats?.totalRegistrations ?? "...",
       change: "+156 today",
       icon: Users,
       color: "secondary",
@@ -56,7 +73,7 @@ export default function AdminDashboard() {
     },
     {
       label: "Participation Rate",
-      value: "78%",
+      value: (stats?.participationRate ?? "...") + "%",
       change: "+5% from last fest",
       icon: TrendingUp,
       color: "accent",
@@ -65,51 +82,12 @@ export default function AdminDashboard() {
     },
     {
       label: "Pending Approvals",
-      value: "24",
+      value: stats?.pendingApprovals ?? "...",
       change: "12 teams waiting",
       icon: Users2,
       color: "primary",
       bgClass: "bg-primary-100 dark:bg-primary-900/20",
       textClass: "text-primary-600 dark:text-primary-400",
-    },
-  ];
-
-  const events = [
-    {
-      id: 1,
-      name: "CodeMasters 2024",
-      type: "Technical",
-      date: "2024-05-20",
-      registrations: 324,
-      status: "Active",
-      limit: 500,
-    },
-    {
-      id: 2,
-      name: "Design Jam",
-      type: "Technical",
-      date: "2024-05-22",
-      registrations: 187,
-      status: "Active",
-      limit: 250,
-    },
-    {
-      id: 3,
-      name: "Battle of Bands",
-      type: "Cultural",
-      date: "2024-05-25",
-      registrations: 45,
-      status: "Draft",
-      limit: 100,
-    },
-    {
-      id: 4,
-      name: "Quiz Master",
-      type: "Technical",
-      date: "2024-05-28",
-      registrations: 512,
-      status: "Active",
-      limit: 600,
     },
   ];
 
@@ -233,7 +211,7 @@ export default function AdminDashboard() {
 
               {/* Stats Grid */}
               <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {stats.map((stat, i) => {
+                {statCards.map((stat, i) => {
                   const Icon = stat.icon;
                   return (
                     <div
@@ -265,10 +243,10 @@ export default function AdminDashboard() {
                 <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
                   <div>
                     <h2 className="text-xl font-bold text-slate-900 dark:text-white">
-                      Events
+                      Recent Events
                     </h2>
                     <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-                      Manage and monitor your college fest events
+                      Monitor your college fest events
                     </p>
                   </div>
                   <button
@@ -276,7 +254,7 @@ export default function AdminDashboard() {
                     className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-primary-500 to-primary-600 text-white rounded-lg font-medium hover:shadow-lg transition-all"
                   >
                     <Plus className="w-4 h-4" />
-                    New Event
+                    Manage Events
                   </button>
                 </div>
 
@@ -296,20 +274,17 @@ export default function AdminDashboard() {
                         <th className="px-6 py-3 text-left text-xs font-bold text-slate-600 dark:text-slate-400 uppercase">
                           Status
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-bold text-slate-600 dark:text-slate-400 uppercase">
-                          Actions
-                        </th>
                       </tr>
                     </thead>
                     <tbody>
-                      {events.map((event) => (
+                      {events.slice(0, 5).map((event) => (
                         <tr
                           key={event.id}
                           className="border-b border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
                         >
                           <td className="px-6 py-4">
                             <p className="font-medium text-slate-900 dark:text-white">
-                              {event.name}
+                              {event.title}
                             </p>
                             <p className="text-sm text-slate-500">
                               {event.date}
@@ -318,12 +293,12 @@ export default function AdminDashboard() {
                           <td className="px-6 py-4">
                             <span
                               className={`px-3 py-1 rounded-full text-sm font-medium ${
-                                event.type === "Technical"
+                                event.category === "Technical"
                                   ? "bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300"
                                   : "bg-secondary-100 dark:bg-secondary-900/30 text-secondary-700 dark:text-secondary-300"
                               }`}
                             >
-                              {event.type}
+                              {event.category}
                             </span>
                           </td>
                           <td className="px-6 py-4">
@@ -332,30 +307,25 @@ export default function AdminDashboard() {
                                 <div
                                   className="bg-gradient-to-r from-primary-500 to-primary-600 h-2 rounded-full"
                                   style={{
-                                    width: `${(event.registrations / event.limit) * 100}%`,
+                                    width: `${(event.registeredParticipants / event.maxParticipants) * 100}%`,
                                   }}
                                 ></div>
                               </div>
                               <span className="text-sm font-medium whitespace-nowrap">
-                                {event.registrations}/{event.limit}
+                                {event.registeredParticipants}/{event.maxParticipants}
                               </span>
                             </div>
                           </td>
                           <td className="px-6 py-4">
                             <span
                               className={`px-3 py-1 rounded-full text-sm font-medium ${
-                                event.status === "Active"
+                                event.status === "Ongoing"
                                   ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300"
                                   : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
                               }`}
                             >
                               {event.status}
                             </span>
-                          </td>
-                          <td className="px-6 py-4">
-                            <button className="text-primary-600 dark:text-primary-400 hover:underline text-sm font-medium">
-                              Edit
-                            </button>
                           </td>
                         </tr>
                       ))}
